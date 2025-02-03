@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Chat App</title>
+
+    <style>
+
+        body{
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+        }
+
+        #usernameModal{
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(0, 0, 0, 0.5);
+            z-index: 10;
+        }
+
+        #usernameModal div{
+            background-color: white;
+            padding: 20px;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        #usernameModal input{
+            padding: 10px;
+            font-size: 16px;
+            margin-top: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+
+
+        #messages {
+            width: 100%;
+            max-width: 600px;
+            height: 400px;
+            border: 1px solid #ddd;
+            background-color: white;
+            overflow-y: scroll;
+            padding: 10px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .message{
+            display: flex;
+            margin-bottom: 10px;
+            align-items: center;
+        }
+
+        .message .username{
+            font-weight: bold;
+            margin-right: 5px;
+        }
+
+        .message.sent {
+            justify-content: flex-end;
+        }
+
+        .message.sent .content{
+            background-color: #d1e7dd;
+            color: black;
+        }
+
+        .message.recieved .content{
+            background-color: #e9ecef;
+            color: black;
+        }
+
+        .content{
+            max-width: 70%;
+            padding: 8px 12px;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+
+        #form {
+            display: flex;
+            width: 100%;
+            max-width: 620px;
+        }
+
+        #form input{
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            margin-right: 10px;
+        }
+
+        #form button{
+            padding: 10px 15px;
+            border: none;
+            background-color: #184cd1;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        #setUsernameButton{
+            padding: 10px 15px;
+            border: none;
+            background-color: #184cd1;
+            color: white;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+
+    </style>
+
+</head>
+<body>
+
+    
+    <div id="usernameModal">
+        <div>
+            <h2>Enter Your username</h2>
+            <input id="usernameInput" type="text" placeholder="Your username">
+            <button id="setUsernameButton">Set Username</button>
+        </div>
+    </div>
+
+    <h1>Real-Time Chat App</h1>
+    <div id="messages"></div>
+    <form id="form">
+        <input type="text" id="input" placeholder="Type a message..." autocomplete="off" />
+        <button>Send</button>
+    </form>
+
+    <script src="/socket.io/socket.io.js"></script>
+    <script>
+        const socket = io();
+
+        const form = document.querySelector('#form');
+        const input = document.querySelector('#input');
+        const messages = document.querySelector('#messages');
+        const usernameModal = document.querySelector('#usernameModal');
+        const usernameInput = document.querySelector('#usernameInput');
+        const setUsernameButton = document.querySelector('#setUsernameButton');
+
+        let username = '';
+
+        // Set username
+        setUsernameButton.addEventListener("click", () => {
+            if(usernameInput.value.trim()){
+                username = usernameInput.value.trim();
+                usernameModal.style.display = "none";
+            }
+        });
+
+        // Handle form submission
+        form.addEventListener('submit', (e) => {
+            e.preventDefault();
+            if(input.value && username){
+                socket.emit('chat message', { username, message: input.value });
+                input.value = '';
+            }
+        });
+
+        // Display messages
+        socket.on('chat message', ({ username : sender, message }) => {
+            const isSent = sender === username;
+
+            const item = document.createElement('div');
+            item.classList.add('message', isSent ? 'sent' : 'received');
+
+            const content = document.createElement('div');
+            content.classList.add('content');
+            content.textContent = message;
+
+            if(!isSent) {
+                const usernameSpan = document.createElement('span');
+                usernameSpan.classList.add('username');
+                usernameSpan.textContent = `${sender}`;
+                item.appendChild(usernameSpan);
+            }
+
+            item.appendChild(content);
+            messages.appendChild(item);
+            messages.scrollTop = messages.scrollHeight;
+
+        });
+        
+
+    </script>
+
+
+</body>
+</html>
